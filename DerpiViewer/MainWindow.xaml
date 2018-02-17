@@ -1,11 +1,206 @@
 ﻿<Controls:MetroWindow x:Class="DerpiViewer.MainWindow"
                       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                      
+                      xmlns:local="clr-namespace:DerpiViewer"
+                      
                       xmlns:Controls="http://metro.mahapps.com/winfx/xaml/controls"
-                      Title="MainWindow"
-                      Height="350"
-                      Width="525">
-    <Grid>
+                      xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+                                            
+                      Title="DerpiViewer"
+                                            
+                      SaveWindowPosition="True"
+                      ResizeMode="CanResize"
+                      
+                      Closing="MetroWindow_Closing"
+                      
+                      GlowBrush="{DynamicResource AccentColorBrush}"
+                      EnableDWMDropShadow="False"
+                      
+                      Height="720" Width="1280"
+                      MinHeight="380" MinWidth="640">
 
+    <Controls:MetroWindow.LeftWindowCommands>
+        <Controls:WindowCommands>
+            <Button Name="MenuBtn" Click="MenuBtn_Click" ToolTip="Access the app settings">
+                <iconPacks:PackIconMaterial Kind="Menu" />
+            </Button>
+        </Controls:WindowCommands>
+    </Controls:MetroWindow.LeftWindowCommands>
+
+    <Controls:MetroWindow.Flyouts>
+        <Controls:FlyoutsControl>
+            <Controls:Flyout Name="MenuFlyout" Header="Menu" Position="Left" Width="400" Theme="Adapt" CloseButtonVisibility="Collapsed">
+                <Grid Margin="5,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="30px"/>
+                        <RowDefinition Height="30px"/>
+                        <RowDefinition Height="30px"/>
+                        <RowDefinition Height="30px"/>
+                        <RowDefinition Height="30px"/>
+                        <RowDefinition Height="30px"/>
+                        <RowDefinition Height="1*"/>
+                        <RowDefinition Height="48px"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="150"/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Colour selection -->
+                    <Label>Colour</Label>
+                    <ComboBox Name="Accent_ComboBox"
+                              SelectionChanged="Accent_ComboBox_SelectionChanged"
+                              Grid.Column="1">
+                    </ComboBox>
+
+                    <!-- Dark mode toggle -->
+                    <Label Grid.Row="1">Dark mode</Label>
+                    <Button Name="DarkMode_Toggle"
+                            Style="{DynamicResource SquareButtonStyle}"
+                            Click="DarkMode_Toggle_Click"
+                            Grid.Row="1" Grid.Column="1"
+                            BorderThickness="1">
+                        <iconPacks:PackIconFontAwesome Name="DarkMode_Icon" Kind="SunRegular" />
+                    </Button>
+
+                    <!-- Minify titlebar -->
+                    <Label Grid.Row="2">Minify titlebar</Label>
+                    <Button Name="MinifyTitlebar_Toggle"
+                            Style="{DynamicResource SquareButtonStyle}"
+                            Click="MinifyTitlebar_Toggle_Click"
+                            Grid.Row="2" Grid.Column="1"
+                            BorderThickness="1">
+                        <iconPacks:PackIconMaterial Name="icoMinifyTitlebar" Kind="Eye" />
+                    </Button>
+                    
+                    <!-- Download location -->
+                    <Grid Grid.Row="3" Grid.ColumnSpan="2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="150"/>
+                            <ColumnDefinition/>
+                            <ColumnDefinition Width="32"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Label VerticalAlignment="Center">Download location:</Label>
+
+                        <TextBlock Name="DlPathBox"
+                                   Grid.Row="3" 
+                                   Grid.Column="1"
+                                   VerticalAlignment="Center"></TextBlock>
+
+                        <Button Name="SelectDownloadFolderBtn"
+                                Click="SelectDownloadFolderBtn_Click"
+                                Style="{DynamicResource SquareButtonStyle}"
+                                Grid.Column="2"
+                                BorderThickness="1">
+                            <iconPacks:PackIconMaterial Kind="FolderDownload" />
+                        </Button>
+                    </Grid>
+
+                    <!-- Token -->
+                    <Grid Grid.Row="4" Grid.ColumnSpan="2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="150"/>
+                            <ColumnDefinition/>
+                            <ColumnDefinition Width="32"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Label VerticalAlignment="Center">Token</Label>
+
+                        <TextBox Name="TokenBox"
+                                 Grid.Row="3" 
+                                 Grid.Column="1"
+                                 VerticalAlignment="Center"></TextBox>
+
+                        <Button Name="TokenHelp"
+                                Click="TokenHelp_Click"
+                                Style="{DynamicResource SquareButtonStyle}"
+                                Grid.Column="2"
+                                BorderThickness="1"
+                                BorderBrush="{x:Null}">
+                            <iconPacks:PackIconMaterial Kind="HelpCircleOutline" />
+                        </Button>
+                    </Grid>
+
+
+
+                    <!-- Ko-fi button -->
+                    <Button Name="btnKoFi"
+                            Click="btnKoFi_Click"
+                            Grid.Row="7" Grid.ColumnSpan="2"
+                            Style="{DynamicResource SquareButtonStyle}" BorderBrush="{x:Null}" Background="{x:Null}" Foreground="{x:Null}">
+                        <Image Source="Imgs/kofi5.png"></Image>
+                    </Button>
+                </Grid>
+
+            </Controls:Flyout>
+        </Controls:FlyoutsControl>
+    </Controls:MetroWindow.Flyouts>
+
+
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="32"/>
+            <RowDefinition/>
+            <RowDefinition Height="100"/>
+            <RowDefinition Height="16"/>
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+                <ColumnDefinition Width="100"/>
+                <ColumnDefinition Width="50"/>
+                <ColumnDefinition Width="50"/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+
+            <TextBox Name="DlQueryBox" 
+                     Grid.Column="1"
+                     Controls:TextBoxHelper.ClearTextButton="True"
+                     Controls:TextBoxHelper.Watermark="Search query"></TextBox>
+            
+            <Controls:NumericUpDown Name="DlPage"
+                                    Value="1"
+                                    HasDecimals="False"
+                                    Minimum="1"
+                                    InterceptArrowKeys="True"
+                                    InterceptManualEnter="True"
+                                    Grid.Column="2"></Controls:NumericUpDown>
+            
+            <Button Name="DlBtn" 
+                    Click="DlBtn_Click" 
+                    Style="{DynamicResource SquareButtonStyle}"
+                    BorderThickness="1"
+                    Grid.Column="3">
+                <iconPacks:PackIconMaterial Kind="Download" />
+            </Button>
+
+            <Button Name="OpenFolderBtn"
+                    Click="OpenFolderBtn_Click"
+                    Style="{DynamicResource SquareButtonStyle}"
+                    BorderThickness="1"
+                    Grid.Column="4">
+                <iconPacks:PackIconMaterial Kind="FolderOpen" />
+            </Button>
+        </Grid>
+
+        <DataGrid Name="FileGrid"
+                  AutoGenerateColumns="False"
+                  ItemsSource="{Binding FilesCollection}"
+                  Grid.Row="1">
+            <DataGrid.Columns>
+                <DataGridTextColumn Width="*" Header="Filename" Binding="{Binding Filename}"/>
+                <DataGridTextColumn Width="*" Header="Author" Binding="{Binding Author}"/>
+                <DataGridTextColumn Width="*" Header="Source" Binding="{Binding Source}"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <TextBox Name="DownloadLog" IsReadOnly="True" Grid.Row="2" FontFamily="Consolas" FontSize="14"/>
+        <TextBox Name="testBox" Grid.Row="3" FontFamily="Consolas" FontSize="10"></TextBox>
+        
     </Grid>
 </Controls:MetroWindow>
