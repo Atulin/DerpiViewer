@@ -45,7 +45,7 @@ namespace DerpiViewer
         public string UploaderId { get; set; }
 
         [JsonProperty("score")]
-        public long? Score { get; set; }
+        public long Score { get; set; }
 
         [JsonProperty("comment_count")]
         public long? CommentCount { get; set; }
@@ -69,13 +69,13 @@ namespace DerpiViewer
         public string Image { get; set; }
 
         [JsonProperty("upvotes")]
-        public long? Upvotes { get; set; }
+        public long Upvotes { get; set; }
 
         [JsonProperty("downvotes")]
-        public long? Downvotes { get; set; }
+        public long Downvotes { get; set; }
 
         [JsonProperty("faves")]
-        public long? Faves { get; set; }
+        public long Faves { get; set; }
 
         [JsonProperty("tags")]
         public string Tags { get; set; }

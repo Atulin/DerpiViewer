@@ -195,7 +195,7 @@ namespace DerpiViewer
 
                 Derpi derpi = Derpi.FromJson(json);
 
-                testBox.Text = query;
+                testBox.Text = query + " at " + Properties.Settings.Default.DownloadLocation; 
 
                 // Go through images in the search
                 foreach (var search in derpi.Search)
@@ -229,10 +229,14 @@ namespace DerpiViewer
                     }
 
                     // Add to list of downloaded files
-                    downloadedFiles.Add(new FileDisplay(search.FileName, search.SourceUrl, artist));
-
-                    DownloadLog.Text += search.FileName + " " + search.SourceUrl + " by " + artist + Environment.NewLine;
-
+                    downloadedFiles.Add(new FileDisplay(search.FileName,
+                                                        search.SourceUrl,
+                                                        artist,
+                                                        search.Description,
+                                                        (int)search.Faves,
+                                                        "https:" + search.Representations.Small,
+                                                        "https:" + search.Image));
+                    
                 }
 
                 // Up page number
@@ -271,7 +275,7 @@ namespace DerpiViewer
             {
                 var folder = dlg.FileName;
 
-                Properties.Settings.Default.DownloadLocation = folder;
+                Properties.Settings.Default.DownloadLocation = folder + @"\";
 
                 // Save settings
                 Properties.Settings.Default.Save();
@@ -292,6 +296,12 @@ namespace DerpiViewer
         private void OpenFolderBtn_Click(object sender, RoutedEventArgs e)
         {
             System.Diagnostics.Process.Start(Properties.Settings.Default.DownloadLocation);
+        }
+
+        // Handle query change
+        private void DlQueryBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            DlPage.Value = 1;
         }
     }
 }

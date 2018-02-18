@@ -160,6 +160,7 @@
 
             <TextBox Name="DlQueryBox" 
                      Grid.Column="1"
+                     TextChanged="DlQueryBox_TextChanged"
                      Controls:TextBoxHelper.ClearTextButton="True"
                      Controls:TextBoxHelper.Watermark="Search query"></TextBox>
             
@@ -196,6 +197,9 @@
                 <DataGridTextColumn Width="*" Header="Filename" Binding="{Binding Filename}"/>
                 <DataGridTextColumn Width="*" Header="Author" Binding="{Binding Author}"/>
                 <DataGridTextColumn Width="*" Header="Source" Binding="{Binding Source}"/>
+                <DataGridTextColumn Width="2*" Header="Description" Binding="{Binding Description}"/>
+                <DataGridTextColumn Width="60" Header="Score" Binding="{Binding Score}"/>
+                <DataGridTextColumn Width="*" Header="Thumb" Binding="{Binding Thumb}"/>
             </DataGrid.Columns>
         </DataGrid>
 
