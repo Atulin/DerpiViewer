@@ -4,8 +4,9 @@
                       
                       xmlns:local="clr-namespace:DerpiViewer"
                       
-                      xmlns:Controls="http://metro.mahapps.com/winfx/xaml/controls"
+                      xmlns:Controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
                       xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+                      xmlns:cefSharp="clr-namespace:CefSharp.Wpf;assembly=CefSharp.Wpf"
                                             
                       Title="DerpiViewer"
                                             
@@ -13,6 +14,7 @@
                       ResizeMode="CanResize"
                       
                       Closing="MetroWindow_Closing"
+                      KeyDown="MetroWindow_KeyDown"
                       
                       GlowBrush="{DynamicResource AccentColorBrush}"
                       EnableDWMDropShadow="False"
@@ -24,6 +26,9 @@
         <Controls:WindowCommands>
             <Button Name="MenuBtn" Click="MenuBtn_Click" ToolTip="Access the app settings">
                 <iconPacks:PackIconMaterial Kind="Menu" />
+            </Button>
+            <Button Name="CloseImageView" Click="CloseImageView_Click" Visibility="Collapsed">
+                <iconPacks:PackIconMaterial Kind="ArrowLeft" />
             </Button>
         </Controls:WindowCommands>
     </Controls:MetroWindow.LeftWindowCommands>
@@ -141,7 +146,12 @@
                              Position="Right" 
                              HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" 
                              TitleVisibility="Collapsed" 
-                             Theme="Adapt"/>
+                             Theme="Adapt" CloseButtonVisibility="Collapsed">
+                
+                <cefSharp:ChromiumWebBrowser Name="BrowserWindow" Grid.RowSpan="2" Grid.ColumnSpan="2"></cefSharp:ChromiumWebBrowser>
+                
+            </Controls:Flyout>
+            
         </Controls:FlyoutsControl>
     </Controls:MetroWindow.Flyouts>
 
@@ -230,7 +240,7 @@
                 
                 <DataGridTextColumn Width="*" Header="Source" Binding="{Binding Source}"/>
                 
-                <DataGridTemplateColumn Width="2*" Header="Description">
+                <DataGridTemplateColumn Width="2*" Header="Tags">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding Tags}" TextWrapping="Wrap"></TextBlock>

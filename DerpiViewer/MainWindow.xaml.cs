@@ -40,6 +40,10 @@ namespace DerpiViewer
             get { return this.downloadedFiles; }
         }
 
+        // Currently displayed file
+        public FileDisplay currentFile;
+        public int currentFileId;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -232,6 +236,9 @@ namespace DerpiViewer
                                                         (int)search.Faves,
                                                         "https:" + search.Representations.Thumb,
                                                         "https:" + search.Image));
+
+                    // Log the file
+                    DownloadLog.Text += search.Image + Environment.NewLine;
                     
                 }
 
@@ -324,9 +331,57 @@ namespace DerpiViewer
             }
         }
 
+        // Handle opening the file
         private void OpenFile_Btn_Click(object sender, RoutedEventArgs e)
         {
+            FileDisplay fd = ((FrameworkElement)sender).DataContext as FileDisplay;
 
+            currentFile = fd;
+            currentFileId = downloadedFiles.IndexOf(fd);
+
+            BrowserWindow.Address = fd.File;
+            CloseImageView.Visibility = Visibility.Visible;
+            Display_Flyout.IsOpen = true;
+        }
+
+        // Close file display
+        private void CloseImageView_Click(object sender, RoutedEventArgs e)
+        {
+            Display_Flyout.IsOpen = false;
+            CloseImageView.Visibility = Visibility.Collapsed;
+        }
+
+        // Handle keyboard shortcuts
+        private void MetroWindow_KeyDown(object sender, KeyEventArgs e)
+        {
+            switch (e.Key)
+            {
+                case Key.A:
+                    BrowserWindow.Address = downloadedFiles[(currentFileId - 1).Clamp(0, downloadedFiles.Count-1)].File;
+                    currentFileId = (currentFileId - 1).Clamp(0, downloadedFiles.Count - 1);
+                    break;
+
+                case Key.D:
+                    BrowserWindow.Address = downloadedFiles[(currentFileId + 1).Clamp(0, downloadedFiles.Count - 1)].File;
+                    currentFileId = (currentFileId + 1).Clamp(0, downloadedFiles.Count - 1);
+
+                    // If nearing the end, fetch more
+                    if (currentFileId == downloadedFiles.Count - 3)
+                        FetchBtn_Click(sender, new RoutedEventArgs());
+
+                    break;
+
+                case Key.W:
+                    using (WebClient client = new WebClient())
+                    {
+                        client.DownloadFileAsync(new Uri(currentFile.File), Properties.Settings.Default.DownloadLocation + currentFile.Filename);
+                    }
+                    break;
+
+                case Key.Escape:
+                    CloseImageView_Click(sender, new RoutedEventArgs());
+                    break;
+            }
         }
     }
 }
