@@ -1,0 +1,6 @@
+# 1.0.0 FULL RELEASE
+ - Search for any pictures on Derpibooru you want!
+ - Display and download them (including .mp4 and .webm files, thanks to the power of embedded Chromium!)
+ - Batch download them even!
+ - Use keyboard shortcuts!
+ - To view explicit images, you need to provide your API access token, however.
