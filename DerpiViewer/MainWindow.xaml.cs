@@ -178,8 +178,8 @@ namespace DerpiViewer
             Properties.Settings.Default.Save();
         }
 
-        // Download
-        private void DlBtn_Click(object sender, RoutedEventArgs e)
+        // Fetch
+        private void FetchBtn_Click(object sender, RoutedEventArgs e)
         {
             if (DlQueryBox.Text != "" && DlQueryBox.Text != null)
             {
@@ -223,18 +223,14 @@ namespace DerpiViewer
                     filename += ".";
                     filename += search.OriginalFormat;
 
-                    using (WebClient client = new WebClient())
-                    {
-                        client.DownloadFileAsync(new Uri("https:" + search.Image), Properties.Settings.Default.DownloadLocation + filename);
-                    }
-
                     // Add to list of downloaded files
                     downloadedFiles.Add(new FileDisplay(search.FileName,
                                                         search.SourceUrl,
                                                         artist,
+                                                        search.Tags,
                                                         search.Description,
                                                         (int)search.Faves,
-                                                        "https:" + search.Representations.Small,
+                                                        "https:" + search.Representations.Thumb,
                                                         "https:" + search.Image));
                     
                 }
@@ -302,6 +298,35 @@ namespace DerpiViewer
         private void DlQueryBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             DlPage.Value = 1;
+        }
+
+        // Handle download button clicked
+        private void Download_Btn_Click(object sender, RoutedEventArgs e)
+        {
+            FileDisplay fd = ((FrameworkElement)sender).DataContext as FileDisplay;
+
+            // Download
+            using (WebClient client = new WebClient())
+            {
+                client.DownloadFileAsync(new Uri(fd.File), Properties.Settings.Default.DownloadLocation + fd.Filename);
+            }
+        }
+
+        // Handle downloading all files
+        private void DowloadAllBtn_Click(object sender, RoutedEventArgs e)
+        {
+            foreach (FileDisplay fd in downloadedFiles)
+            {
+                using (WebClient client = new WebClient())
+                {
+                    client.DownloadFileAsync(new Uri(fd.File), Properties.Settings.Default.DownloadLocation + fd.Filename);
+                }
+            }
+        }
+
+        private void OpenFile_Btn_Click(object sender, RoutedEventArgs e)
+        {
+
         }
     }
 }

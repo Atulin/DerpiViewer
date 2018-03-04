@@ -30,7 +30,7 @@
 
     <Controls:MetroWindow.Flyouts>
         <Controls:FlyoutsControl>
-            <Controls:Flyout Name="MenuFlyout" Header="Menu" Position="Left" Width="400" Theme="Adapt" CloseButtonVisibility="Collapsed">
+            <Controls:Flyout Name="MenuFlyout" Header="Menu" Position="Left" Width="400" Theme="Adapt" CloseButtonVisibility="Collapsed" >
                 <Grid Margin="5,0">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="30px"/>
@@ -135,6 +135,13 @@
                 </Grid>
 
             </Controls:Flyout>
+            
+            <!-- Image display -->
+            <Controls:Flyout Name="Display_Flyout" 
+                             Position="Right" 
+                             HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" 
+                             TitleVisibility="Collapsed" 
+                             Theme="Adapt"/>
         </Controls:FlyoutsControl>
     </Controls:MetroWindow.Flyouts>
 
@@ -155,6 +162,7 @@
                 <ColumnDefinition Width="100"/>
                 <ColumnDefinition Width="50"/>
                 <ColumnDefinition Width="50"/>
+                <ColumnDefinition Width="50"/>
                 <ColumnDefinition/>
             </Grid.ColumnDefinitions>
 
@@ -172,20 +180,31 @@
                                     InterceptManualEnter="True"
                                     Grid.Column="2"></Controls:NumericUpDown>
             
-            <Button Name="DlBtn" 
-                    Click="DlBtn_Click" 
+            <Button Name="FetchBtn" 
+                    Click="FetchBtn_Click" 
                     Style="{DynamicResource SquareButtonStyle}"
                     BorderThickness="1"
-                    Grid.Column="3">
-                <iconPacks:PackIconMaterial Kind="Download" />
+                    Grid.Column="3"
+                    ToolTip="Search">
+                <iconPacks:PackIconMaterial Kind="Magnify" />
             </Button>
 
             <Button Name="OpenFolderBtn"
                     Click="OpenFolderBtn_Click"
                     Style="{DynamicResource SquareButtonStyle}"
                     BorderThickness="1"
-                    Grid.Column="4">
+                    Grid.Column="4"
+                    ToolTip="Open download folder">
                 <iconPacks:PackIconMaterial Kind="FolderOpen" />
+            </Button>
+
+            <Button Name="DowloadAllBtn"
+                    Click="DowloadAllBtn_Click"
+                    Style="{DynamicResource SquareButtonStyle}"
+                    BorderThickness="1"
+                    Grid.Column="5"
+                    ToolTip="Download all">
+                <iconPacks:PackIconMaterial Kind="Download" />
             </Button>
         </Grid>
 
@@ -194,12 +213,44 @@
                   ItemsSource="{Binding FilesCollection}"
                   Grid.Row="1">
             <DataGrid.Columns>
+                
+                <DataGridTemplateColumn Width="*" Header="Thumbnail">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Button Name="OpenFile_Btn" Click="OpenFile_Btn_Click">
+                                <Image Source="{Binding Thumb}"></Image>
+                            </Button>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                
                 <DataGridTextColumn Width="*" Header="Filename" Binding="{Binding Filename}"/>
+                
                 <DataGridTextColumn Width="*" Header="Author" Binding="{Binding Author}"/>
+                
                 <DataGridTextColumn Width="*" Header="Source" Binding="{Binding Source}"/>
-                <DataGridTextColumn Width="2*" Header="Description" Binding="{Binding Description}"/>
+                
+                <DataGridTemplateColumn Width="2*" Header="Description">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Tags}" TextWrapping="Wrap"></TextBlock>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                
                 <DataGridTextColumn Width="60" Header="Score" Binding="{Binding Score}"/>
-                <DataGridTextColumn Width="*" Header="Thumb" Binding="{Binding Thumb}"/>
+                
+                <DataGridTemplateColumn Width="50">
+                    
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Button Name="Download_Btn" Click="Download_Btn_Click" ToolTip="Download file">
+                                <iconPacks:PackIconMaterial Kind="Download" />
+                            </Button>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                
             </DataGrid.Columns>
         </DataGrid>
 
