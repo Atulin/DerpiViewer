@@ -187,10 +187,26 @@ namespace DerpiViewer
         {
             if (DlQueryBox.Text != "" && DlQueryBox.Text != null)
             {
+                //Prepare rating query
+                string rating = "";
+
+                if ((bool)Safe_Switch.IsChecked)
+                    rating += "safe ";
+                if ((bool)Questionable_Switch.IsChecked)
+                    rating += "questionable ";
+                if ((bool)Explicit_Switch.IsChecked)
+                    rating += "explicit ";
+                rating = rating.TrimEnd(' ').Replace(" ", "+OR+");
+
+                if (rating != "")
+                    rating = "%2C+(" + rating + ")";
+
+
                 // Prepare API query
                 string query = "";
                 query += "https://derpibooru.org/search.json?q=";
                 query += DlQueryBox.Text.TrimEnd(',').TrimEnd(' ').Replace(" ", "+").Replace(",", "%2C"); // clean up query
+                query += rating;
                 query += "&page=" + DlPage.Value;
                 query += "&key=" + Properties.Settings.Default.Token;
 
@@ -251,7 +267,17 @@ namespace DerpiViewer
                 testBox.Text = "query cannot be empty";
             }
 
+        }
 
+        // Handle cleaning fetched files
+        private void ClearFetched_Btn_Click(object sender, RoutedEventArgs e)
+        {
+            if (downloadedFiles.Count() > 0)
+            {
+                downloadedFiles.Clear();
+                DlPage.Value = 1;
+                testBox.Text = "List has been cleared!";
+            }
         }
 
         // Set download path
@@ -292,7 +318,7 @@ namespace DerpiViewer
         // Handle token help
         private void TokenHelp_Click(object sender, RoutedEventArgs e)
         {
-
+            System.Diagnostics.Process.Start("https://github.com/Atulin/DerpiViewer#token");
         }
 
         // Handle opening destination folder
@@ -329,6 +355,12 @@ namespace DerpiViewer
                     client.DownloadFileAsync(new Uri(fd.File), Properties.Settings.Default.DownloadLocation + fd.Filename);
                 }
             }
+        }
+
+        // Handle advanced search flyout open
+        private void AdvancedSearchBtn_Click(object sender, RoutedEventArgs e)
+        {
+            AdvancedSearch_Flyout.IsOpen = !AdvancedSearch_Flyout.IsOpen;
         }
 
         // Handle opening the file
