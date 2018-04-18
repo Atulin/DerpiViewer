@@ -1,4 +1,6 @@
 # DerpiViewer
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FAtulin%2FDerpiViewer.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2FAtulin%2FDerpiViewer?ref=badge_shield)
+
 View and download Derpibooru pictures
 
 ## Instructions
@@ -27,3 +29,7 @@ Adding a token to the application will make it respect some of your user setting
 ## Todo
  - Download progress in the list view
  
+
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FAtulin%2FDerpiViewer.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2FAtulin%2FDerpiViewer?ref=badge_large)
