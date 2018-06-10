@@ -1,27 +1,16 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using System.ComponentModel;
 using MahApps.Metro;
 using MahApps.Metro.Controls;
-using Microsoft.Win32;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 using System.IO;
 using Microsoft.WindowsAPICodePack.Dialogs;
 using System.Collections.ObjectModel;
+using DerpiViewer.Properties;
 
 namespace DerpiViewer
 {
@@ -30,19 +19,15 @@ namespace DerpiViewer
     /// </summary>
     public partial class MainWindow : MetroWindow
     {
-        // Initialize download path
-        string dlPath;
-
         // Initialize list of files downloaded this session
-        ObservableCollection<FileDisplay> downloadedFiles = new ObservableCollection<FileDisplay>();
-        public ObservableCollection<FileDisplay> FilesCollection
-        {
-            get { return this.downloadedFiles; }
-        }
+        public ObservableCollection<FileDisplay> FilesCollection { get; } = new ObservableCollection<FileDisplay>();
 
         // Currently displayed file
-        public FileDisplay currentFile;
-        public int currentFileId;
+        public FileDisplay CurrentFile;
+        public int CurrentFileId;
+
+        // Settings
+        private readonly Settings _settings = Settings.Default;
 
         public MainWindow()
         {
@@ -53,55 +38,60 @@ namespace DerpiViewer
 
             // Get app accent and theme from settings and set it
             ThemeManager.ChangeAppStyle(Application.Current,
-                                            ThemeManager.GetAccent(Properties.Settings.Default.Accent),
-                                            ThemeManager.GetAppTheme(Properties.Settings.Default.Theme));
+                                            ThemeManager.GetAccent(_settings.Accent),
+                                            ThemeManager.GetAppTheme(_settings.Theme));
 
             // Set accent combobox data source
             Accent_ComboBox.ItemsSource = Enum.GetValues(typeof(LooksManager.Accents)).Cast<LooksManager.Accents>();
 
             // Set accent combobox item based on settings
-            Accent_ComboBox.SelectedIndex = (int)Enum.Parse(typeof(LooksManager.Accents), Properties.Settings.Default.Accent);
+            Accent_ComboBox.SelectedIndex = (int)Enum.Parse(typeof(LooksManager.Accents), _settings.Accent);
 
             // Set theme button icon based on settings
-            if (Properties.Settings.Default.Theme == "BaseLight")
+            if (_settings.Theme == "BaseLight")
             {
                 DarkMode_Icon.Kind = MahApps.Metro.IconPacks.PackIconFontAwesomeKind.SunRegular;
-                darkmodeIconToggle = false;
+                _darkmodeIconToggle = false;
             }
             else
             {
                 DarkMode_Icon.Kind = MahApps.Metro.IconPacks.PackIconFontAwesomeKind.MoonRegular;
-                darkmodeIconToggle = true;
+                _darkmodeIconToggle = true;
             }
 
             // Set download path
-            if (Properties.Settings.Default.DownloadLocation == "")
+            if (_settings.DownloadLocation == "")
             {
-                Properties.Settings.Default.DownloadLocation = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures) + @"\DerpiViewer\";
+                _settings.DownloadLocation = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures) + @"\DerpiViewer\";
             }
 
-            dlPath = Properties.Settings.Default.DownloadLocation;
+            var dlPath = _settings.DownloadLocation;
 
             // Create the directory if doesn't exist
-            System.IO.Directory.CreateDirectory(dlPath);
+            Directory.CreateDirectory(dlPath);
 
             // Set path text
-            DlPathBox.Text = Properties.Settings.Default.DownloadLocation;
+            DlPathBox.Text = _settings.DownloadLocation;
 
             // Set token
-            TokenBox.Text = Properties.Settings.Default.Token;
+            TokenBox.Text = _settings.Token;
+
+            // Set ratings
+            Safe_Switch.IsChecked = _settings.Safe;
+            Questionable_Switch.IsChecked = _settings.Questionable;
+            Explicit_Switch.IsChecked = _settings.Explicit;
         }
 
         // Handle main menu open/close
-        bool menuToggle = false;
+        bool _menuToggle;
         private void MenuBtn_Click(object sender, RoutedEventArgs e)
         {
-            MenuFlyout.IsOpen = !menuToggle;
-            menuToggle = !menuToggle;
+            MenuFlyout.IsOpen = !_menuToggle;
+            _menuToggle = !_menuToggle;
 
             // Save settings
-            Properties.Settings.Default.Token = TokenBox.Text;
-            Properties.Settings.Default.Save();
+            _settings.Token = TokenBox.Text;
+            _settings.Save();
         }
 
         // Handle accent selection combobox
@@ -113,29 +103,29 @@ namespace DerpiViewer
                                         ThemeManager.GetAccent(Accent_ComboBox.SelectedItem.ToString()),
                                         theme.Item1);
 
-            // Save in settings
-            Properties.Settings.Default.Accent = Accent_ComboBox.SelectedItem.ToString();
+            // Save in _settings
+            _settings.Accent = Accent_ComboBox.SelectedItem.ToString();
         }
 
         // Handle theme selection switch
-        private bool darkmodeIconToggle = false;
+        private bool _darkmodeIconToggle;
         private void DarkMode_Toggle_Click(object sender, RoutedEventArgs e)
         {
             Tuple<AppTheme, Accent> completeTheme = ThemeManager.DetectAppStyle(Application.Current);
-            string theme = "";
+            string theme;
 
-            if (darkmodeIconToggle)
+            if (_darkmodeIconToggle)
             {
                 theme = "BaseLight";
 
-                darkmodeIconToggle = false;
+                _darkmodeIconToggle = false;
                 DarkMode_Icon.Kind = MahApps.Metro.IconPacks.PackIconFontAwesomeKind.SunRegular;
             }
             else
             {
                 theme = "BaseDark";
 
-                darkmodeIconToggle = true;
+                _darkmodeIconToggle = true;
                 DarkMode_Icon.Kind = MahApps.Metro.IconPacks.PackIconFontAwesomeKind.MoonRegular;
             }
 
@@ -144,12 +134,11 @@ namespace DerpiViewer
                                             completeTheme.Item2,
                                             ThemeManager.GetAppTheme(theme));
 
-            // Save in settings
-            Properties.Settings.Default.Theme = theme;
+            // Save in _settings
+            _settings.Theme = theme;
         }
 
         // Handle titlebar minification switch
-
         private void MinifyTitlebar_Toggle_Click(object sender, RoutedEventArgs e)
         {
             if (ShowTitleBar)
@@ -163,8 +152,8 @@ namespace DerpiViewer
                 icoMinifyTitlebar.Kind = MahApps.Metro.IconPacks.PackIconMaterialKind.Eye;
             }
 
-            // Save in settings
-            Properties.Settings.Default.MinifiedTitle = ShowTitleBar;
+            // Save in _settings
+            _settings.MinifiedTitle = ShowTitleBar;
         }
 
         // Handle KoFi
@@ -177,89 +166,121 @@ namespace DerpiViewer
         private void MetroWindow_Closing(object sender, CancelEventArgs e)
         {
             // Save token
-            Properties.Settings.Default.Token = TokenBox.Text;
-            // Save settings
-            Properties.Settings.Default.Save();
+            _settings.Token = TokenBox.Text;
+            // Save _settings
+            _settings.Save();
         }
 
         // Fetch
         private void FetchBtn_Click(object sender, RoutedEventArgs e)
         {
-            if (DlQueryBox.Text != "" && DlQueryBox.Text != null)
+            if (!string.IsNullOrEmpty(DlQueryBox.Text))
             {
                 //Prepare rating query
                 string rating = "";
 
-                if ((bool)Safe_Switch.IsChecked)
+                if (Safe_Switch.IsChecked != null && (bool)Safe_Switch.IsChecked)
                     rating += "safe ";
-                if ((bool)Questionable_Switch.IsChecked)
+                if (Questionable_Switch.IsChecked != null && (bool)Questionable_Switch.IsChecked)
                     rating += "questionable ";
-                if ((bool)Explicit_Switch.IsChecked)
+                if (Explicit_Switch.IsChecked != null && (bool)Explicit_Switch.IsChecked)
                     rating += "explicit ";
                 rating = rating.TrimEnd(' ').Replace(" ", "+OR+");
 
                 if (rating != "")
                     rating = "%2C+(" + rating + ")";
 
+                //Prepare score query
+                string score = "";
+
+                if (MinimumScore_Numeric.Value != null && MaxiumumScore_Numeric.Value != null)
+                {
+                    score += "(score.gte:" + MinimumScore_Numeric.Value;
+                    score += " AND ";
+                    score += "score.lte:" + MaxiumumScore_Numeric.Value;
+                    score += ")";
+                }
+                else
+                {
+                    if (MinimumScore_Numeric.Value != null)
+                        score += "score.gte:" + MinimumScore_Numeric.Value;
+                    if (MaxiumumScore_Numeric.Value != null)
+                        score += "score.lte:" + MaxiumumScore_Numeric.Value;
+                }
+
+                if (score != "")
+                    score = "%2C+" + score;
+
 
                 // Prepare API query
                 string query = "";
                 query += "https://derpibooru.org/search.json?q=";
-                query += DlQueryBox.Text.TrimEnd(',').TrimEnd(' ').Replace(" ", "+").Replace(",", "%2C"); // clean up query
+                query += DlQueryBox.Text
+                        .TrimEnd(',')
+                        .TrimEnd(' ')
+                        .Replace(" ", "+")
+                        .Replace(",", "%2C"); // clean up query
                 query += rating;
+                query += score;
                 query += "&page=" + DlPage.Value;
-                query += "&key=" + Properties.Settings.Default.Token;
+                query += "&key=" + _settings.Token;
 
                 // Prepare json
                 string json = JsonGetter.GetJson(query);
 
                 Derpi derpi = Derpi.FromJson(json);
 
-                testBox.Text = query + " at " + Properties.Settings.Default.DownloadLocation; 
+                testBox.Text = query + " at " + _settings.DownloadLocation; 
 
                 // Go through images in the search
-                foreach (var search in derpi.Search)
+                if (derpi == null)
                 {
-                    // Check if artist is given
-                    string[] tags = search.Tags.Split(',');
-                    var artists = tags.Where(it => it.StartsWith("artist:")).Select(it => it.Replace("artist:", null));
-
-                    // Format artists
-                    string artist = "";
-                    foreach (var v in artists)
-                        artist += v.ToString() + ",";
-                    artist = artist.TrimEnd(',');
-
-                    // Prepare file name
-                    string filename = "";
-                    filename += search.Id;
-                    filename += "_";
-                    filename += System.IO.Path.GetFileNameWithoutExtension(search.FileName);
-                    filename += "_by_";
-                    if (artist != "")
-                        filename += artist;
-                    else
-                        filename += "no-author";
-                    filename += ".";
-                    filename += search.OriginalFormat;
-
-                    // Add to list of downloaded files
-                    downloadedFiles.Add(new FileDisplay(search.FileName,
-                                                        search.SourceUrl,
-                                                        artist,
-                                                        search.Tags,
-                                                        search.Description,
-                                                        (int)search.Faves,
-                                                        "https:" + search.Representations.Thumb,
-                                                        "https:" + search.Image));
-
-                    // Log the file
-                    DownloadLog.Text += search.Image + Environment.NewLine;
-                    
+                    testBox.Text = "No results for: " + query;
                 }
+                else
+                {
+                    foreach (var search in derpi.Search)
+                    {
+                        // Check if artist is given
+                        string[] tags = search.Tags.Split(',');
+                        var artists = tags.Where(it => it.StartsWith("artist:"))
+                            .Select(it => it.Replace("artist:", null));
 
-                // Up page number
-                DlPage.Value = DlPage.Value + 1;
+                        // Format artists
+                        string artist = artists.Aggregate("", (current, v) => current + (v.ToString() + ","));
+                        artist = artist.TrimEnd(',');
+
+                        // Prepare file name
+                        var sb = new System.Text.StringBuilder();
+
+                        sb.Append(search.Id)
+                            .Append("_")
+                            .Append(Path.GetFileNameWithoutExtension(search.FileName))
+                            .Append("_by_")
+                            .Append(artist != "" ? artist : "no-author")
+                            .Append(".")
+                            .Append(search.OriginalFormat);
+
+                        string filename = sb.ToString();
+
+                        // Add to list of downloaded files
+                        FilesCollection.Add(new FileDisplay(search.FileName,
+                            search.SourceUrl,
+                            artist,
+                            search.Tags,
+                            search.Description,
+                            (int) search.Faves,
+                            "https:" + search.Representations.Thumb,
+                            "https:" + search.Image));
+
+                        // Log the file
+                        DownloadLog.Text += search.Image + Environment.NewLine;
+
+                    }
+
+                    // Up page number
+                    DlPage.Value = DlPage.Value + 1;
+                }
 
             }
             else
@@ -272,9 +293,9 @@ namespace DerpiViewer
         // Handle cleaning fetched files
         private void ClearFetched_Btn_Click(object sender, RoutedEventArgs e)
         {
-            if (downloadedFiles.Count() > 0)
+            if (FilesCollection.Any())
             {
-                downloadedFiles.Clear();
+                FilesCollection.Clear();
                 DlPage.Value = 1;
                 testBox.Text = "List has been cleared!";
             }
@@ -285,32 +306,34 @@ namespace DerpiViewer
         {
             // Initialize folder selection window
 
-            var dlg = new CommonOpenFileDialog();
-            dlg.Title = "Select download folder";
-            dlg.IsFolderPicker = true;
-            dlg.InitialDirectory = Properties.Settings.Default.DownloadLocation;
+            var dlg = new CommonOpenFileDialog
+            {
+                Title = "Select download folder",
+                IsFolderPicker = true,
+                InitialDirectory = _settings.DownloadLocation,
+                AddToMostRecentlyUsedList = false,
+                AllowNonFileSystemItems = false,
+                DefaultDirectory = _settings.DownloadLocation,
+                EnsureFileExists = true,
+                EnsurePathExists = true,
+                EnsureReadOnly = false,
+                EnsureValidNames = true,
+                Multiselect = false,
+                ShowPlacesList = true
+            };
 
-            dlg.AddToMostRecentlyUsedList = false;
-            dlg.AllowNonFileSystemItems = false;
-            dlg.DefaultDirectory = Properties.Settings.Default.DownloadLocation;
-            dlg.EnsureFileExists = true;
-            dlg.EnsurePathExists = true;
-            dlg.EnsureReadOnly = false;
-            dlg.EnsureValidNames = true;
-            dlg.Multiselect = false;
-            dlg.ShowPlacesList = true;
 
             if (dlg.ShowDialog() == CommonFileDialogResult.Ok)
             {
                 var folder = dlg.FileName;
 
-                Properties.Settings.Default.DownloadLocation = folder + @"\";
+                _settings.DownloadLocation = folder + @"\";
 
-                // Save settings
-                Properties.Settings.Default.Save();
+                // Save _settings
+                _settings.Save();
 
                 // Set path text
-                DlPathBox.Text = Properties.Settings.Default.DownloadLocation;
+                DlPathBox.Text = _settings.DownloadLocation;
             }
 
         }
@@ -324,7 +347,7 @@ namespace DerpiViewer
         // Handle opening destination folder
         private void OpenFolderBtn_Click(object sender, RoutedEventArgs e)
         {
-            System.Diagnostics.Process.Start(Properties.Settings.Default.DownloadLocation);
+            System.Diagnostics.Process.Start(_settings.DownloadLocation);
         }
 
         // Handle query change
@@ -341,18 +364,20 @@ namespace DerpiViewer
             // Download
             using (WebClient client = new WebClient())
             {
-                client.DownloadFileAsync(new Uri(fd.File), Properties.Settings.Default.DownloadLocation + fd.Filename);
+                if (fd != null)
+                    client.DownloadFileAsync(new Uri(fd.File),
+                        _settings.DownloadLocation + fd.Filename);
             }
         }
 
         // Handle downloading all files
         private void DowloadAllBtn_Click(object sender, RoutedEventArgs e)
         {
-            foreach (FileDisplay fd in downloadedFiles)
+            foreach (FileDisplay fd in FilesCollection)
             {
                 using (WebClient client = new WebClient())
                 {
-                    client.DownloadFileAsync(new Uri(fd.File), Properties.Settings.Default.DownloadLocation + fd.Filename);
+                    client.DownloadFileAsync(new Uri(fd.File), _settings.DownloadLocation + fd.Filename);
                 }
             }
         }
@@ -363,15 +388,28 @@ namespace DerpiViewer
             AdvancedSearch_Flyout.IsOpen = !AdvancedSearch_Flyout.IsOpen;
         }
 
+        // Handle flyout closed
+        private void AdvancedSearch_Flyout_OnIsOpenChanged(object sender, RoutedEventArgs e)
+        {
+            if (!AdvancedSearch_Flyout.IsOpen)
+            {
+                _settings.Safe = Safe_Switch.IsChecked ?? false;
+                _settings.Questionable = Questionable_Switch.IsChecked ?? false;
+                _settings.Explicit = Explicit_Switch.IsChecked ?? false;
+
+                _settings.Save();
+            }
+        }
+
         // Handle opening the file
         private void OpenFile_Btn_Click(object sender, RoutedEventArgs e)
         {
             FileDisplay fd = ((FrameworkElement)sender).DataContext as FileDisplay;
 
-            currentFile = fd;
-            currentFileId = downloadedFiles.IndexOf(fd);
+            CurrentFile = fd;
+            CurrentFileId = FilesCollection.IndexOf(fd);
 
-            BrowserWindow.Address = fd.File;
+            if (fd != null) BrowserWindow.Address = fd.File;
             CloseImageView.Visibility = Visibility.Visible;
             Display_Flyout.IsOpen = true;
         }
@@ -391,16 +429,16 @@ namespace DerpiViewer
                 switch (e.Key)
                 {
                     case Key.A:
-                        BrowserWindow.Address = downloadedFiles[(currentFileId - 1).Clamp(0, downloadedFiles.Count - 1)].File;
-                        currentFileId = (currentFileId - 1).Clamp(0, downloadedFiles.Count - 1);
+                        BrowserWindow.Address = FilesCollection[(CurrentFileId - 1).Clamp(0, FilesCollection.Count - 1)].File;
+                        CurrentFileId = (CurrentFileId - 1).Clamp(0, FilesCollection.Count - 1);
                         break;
 
                     case Key.D:
-                        BrowserWindow.Address = downloadedFiles[(currentFileId + 1).Clamp(0, downloadedFiles.Count - 1)].File;
-                        currentFileId = (currentFileId + 1).Clamp(0, downloadedFiles.Count - 1);
+                        BrowserWindow.Address = FilesCollection[(CurrentFileId + 1).Clamp(0, FilesCollection.Count - 1)].File;
+                        CurrentFileId = (CurrentFileId + 1).Clamp(0, FilesCollection.Count - 1);
 
                         // If nearing the end, fetch more
-                        if (currentFileId == downloadedFiles.Count - 3)
+                        if (CurrentFileId == FilesCollection.Count - 3)
                             FetchBtn_Click(sender, new RoutedEventArgs());
 
                         break;
@@ -408,7 +446,7 @@ namespace DerpiViewer
                     case Key.W:
                         using (WebClient client = new WebClient())
                         {
-                            client.DownloadFileAsync(new Uri(currentFile.File), Properties.Settings.Default.DownloadLocation + currentFile.Filename);
+                            client.DownloadFileAsync(new Uri(CurrentFile.File), _settings.DownloadLocation + CurrentFile.Filename);
                         }
                         break;
 
