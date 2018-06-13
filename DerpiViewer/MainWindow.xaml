@@ -49,6 +49,14 @@
             </Button>
         </controls:WindowCommands>
     </controls:MetroWindow.LeftWindowCommands>
+    
+    <controls:MetroWindow.RightWindowCommands>
+        <controls:WindowCommands>
+            <Button Name="ToggleInfogridBtn" Click="ToggleInfogrid_Click"  ToolTip="Show image info" Visibility="Collapsed">
+                <iconPacks:PackIconMaterial Kind="InformationOutline" />
+            </Button>
+        </controls:WindowCommands>
+    </controls:MetroWindow.RightWindowCommands>
 
     <controls:MetroWindow.Flyouts>
         <controls:FlyoutsControl>
@@ -165,8 +173,74 @@
                              TitleVisibility="Collapsed" 
                              Theme="Adapt" CloseButtonVisibility="Collapsed">
 
-                <cefSharp:ChromiumWebBrowser Name="BrowserWindow" Grid.RowSpan="2" Grid.ColumnSpan="2"></cefSharp:ChromiumWebBrowser>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition Width="300"/>
+                    </Grid.ColumnDefinitions>
 
+                    <!-- MAIN WEB BROWSER -->
+                    <cefSharp:ChromiumWebBrowser Name="BrowserWindow" Grid.RowSpan="2" Grid.ColumnSpan="2"></cefSharp:ChromiumWebBrowser>
+
+                    <!-- infogrid -->
+                    <Grid Name="InfoGrid"
+                          Grid.Column="1"
+                          Margin="0,32,0,0"
+                          Visibility="Collapsed">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="32"/>
+                            <RowDefinition Height="32"/>
+                            <RowDefinition Height="32"/>
+                            <RowDefinition Height="32"/>
+                            <RowDefinition Height="64" MinHeight="32"/>
+                            <RowDefinition Height="7"/>
+                            <RowDefinition Height="32"/>
+                            <RowDefinition/>
+                        </Grid.RowDefinitions>
+
+                        <!--Actions-->
+                        <StackPanel Orientation="Horizontal">
+                            <Button Name="DownloadBtn" Click="Download_Btn_Click">
+                                <iconPacks:PackIconMaterial Kind="Download" />
+                            </Button>
+                            <Button Name="OpenInBrowserBtn" Click="OpenInBrowserBtn_Click">
+                                <iconPacks:PackIconMaterial Kind="OpenInNew" />
+                            </Button>
+                            <Button Name="CopyUrlBtn" Click="CopyUrlBtn_Click">
+                                <iconPacks:PackIconMaterial Kind="LinkVariant" />
+                            </Button>
+                        </StackPanel>
+
+                        <!--Artist-->
+                        <Label Grid.Row="1">Artist</Label>
+                        <TextBox Grid.Row="2"
+                                 Name="Info_Artist"
+                                 IsReadOnly="True"
+                                 Background="{DynamicResource FlyoutBackgroundBrush}"></TextBox>
+
+                        <!--Description-->
+                        <Label Grid.Row="3">Description</Label>
+                        <TextBox Grid.Row="4"
+                                 Name="Info_Description"
+                                 TextWrapping="Wrap"
+                                 IsReadOnly="True"
+                                 VerticalScrollBarVisibility="Auto"
+                                 Background="{DynamicResource FlyoutBackgroundBrush}"></TextBox>
+
+                        <!--Splitter-->
+                        <GridSplitter Grid.Row="5"
+                                      Height="3"
+                                      HorizontalAlignment="Stretch"
+                                      Margin="30,2"
+                                      Cursor="SizeNS"></GridSplitter>
+
+                        <!--Tags-->
+                        <Label Grid.Row="6">Tags</Label>
+                        <ListView ItemsSource="{Binding TagsCollection}"
+                                  PreviewMouseLeftButtonUp="TagClick"
+                                  Grid.Row="7"></ListView>
+                    </Grid>
+                </Grid>
             </controls:Flyout>
 
             <!-- Advanced search -->
@@ -193,7 +267,7 @@
                         <ColumnDefinition Width="80px"/>
                         <ColumnDefinition/>
                     </Grid.ColumnDefinitions>
-                    
+
                     <!-- Ratings -->
                     <Label Margin="10,0,0,0" FontSize="14">Ratings</Label>
                     <controls:ToggleSwitch Name="Safe_Switch" Style="{DynamicResource ResourceKey='Custom.ToggleSwitch.Win10'}" Grid.Column="1" IsChecked="True">Safe</controls:ToggleSwitch>
@@ -230,6 +304,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="32"/>
             <RowDefinition/>
+            <RowDefinition Height="7"/>
             <RowDefinition Height="100"/>
             <RowDefinition Height="16"/>
         </Grid.RowDefinitions>
@@ -239,6 +314,7 @@
                 <ColumnDefinition Width="1.2*"/>
                 <ColumnDefinition/>
                 <ColumnDefinition Width="100"/>
+                <ColumnDefinition Width="50"/>
                 <ColumnDefinition Width="50"/>
                 <ColumnDefinition Width="50"/>
                 <ColumnDefinition Width="20"/>
@@ -252,7 +328,7 @@
                      TextChanged="DlQueryBox_TextChanged"
                      controls:TextBoxHelper.ClearTextButton="True"
                      controls:TextBoxHelper.Watermark="Search query"></TextBox>
-            
+
             <controls:NumericUpDown Name="DlPage"
                                     Value="1"
                                     HasDecimals="False"
@@ -260,7 +336,7 @@
                                     InterceptArrowKeys="True"
                                     InterceptManualEnter="True"
                                     Grid.Column="2"></controls:NumericUpDown>
-            
+
             <Button Name="FetchBtn" 
                     Click="FetchBtn_Click" 
                     Style="{DynamicResource SquareButtonStyle}"
@@ -280,11 +356,21 @@
                 <iconPacks:PackIconMaterial Kind="Filter" />
             </Button>
 
+            <Button Name="ClearFetched_Btn"
+                    Click="ClearFetched_Btn_Click"
+                    Style="{DynamicResource SquareButtonStyle}"
+                    BorderThickness="1"
+                    Grid.Column="5"
+                    ToolTip="Clean all fetched files">
+                <iconPacks:PackIconMaterial Kind="Broom" />
+            </Button>
+
+
             <Button Name="OpenFolderBtn"
                     Click="OpenFolderBtn_Click"
                     Style="{DynamicResource SquareButtonStyle}"
                     BorderThickness="1"
-                    Grid.Column="6"
+                    Grid.Column="7"
                     ToolTip="Open download folder">
                 <iconPacks:PackIconMaterial Kind="FolderOpen" />
             </Button>
@@ -293,73 +379,64 @@
                     Click="DowloadAllBtn_Click"
                     Style="{DynamicResource SquareButtonStyle}"
                     BorderThickness="1"
-                    Grid.Column="7"
+                    Grid.Column="8"
                     ToolTip="Download all">
                 <iconPacks:PackIconMaterial Kind="Download" />
             </Button>
         </Grid>
 
-        <DataGrid Name="FileGrid"
-                  AutoGenerateColumns="False"
-                  ItemsSource="{Binding FilesCollection}"
-                  Grid.Row="1" Margin="0">
-            <DataGrid.Columns>
-                
-                <DataGridTemplateColumn Width="*" Header="Thumbnail">
-                    <DataGridTemplateColumn.CellTemplate>
+
+        <Grid Name="ImgGrid"
+              Grid.Row="1" Margin="0">
+            <ScrollViewer>
+                <ItemsControl ItemsSource="{Binding FilesCollection}">
+                    <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <Button Name="OpenFile_Btn" Click="OpenFile_Btn_Click">
-                                <Image Source="{Binding Thumb}"></Image>
+                            <Button Name="OpenFile_Btn" Click="OpenFile_Btn_Click"
+                                    MaxHeight="300"
+                                    Background="{x:Null}" BorderBrush="{x:Null}" Foreground="{x:Null}">
+                                <Grid>
+                                    <Image Source="{Binding Thumb}"
+                                           Stretch="UniformToFill"
+                                           Cursor="Hand">
+                                    </Image>
+                                    <TextBlock Text="{Binding Extension}" Foreground="Red" FontSize="12" Margin="8">
+                                        <TextBlock.Effect>
+                                            <DropShadowEffect BlurRadius="8" ShadowDepth="0" Direction="0" Color="Black" Opacity="2" />
+                                        </TextBlock.Effect>
+                                    </TextBlock>
+                                    <TextBlock Text="{Binding Score}" Foreground="LawnGreen" FontSize="12" Margin="8" TextAlignment="Right">
+                                        <TextBlock.Effect>
+                                            <DropShadowEffect BlurRadius="8" ShadowDepth="0" Direction="0" Color="Black" Opacity="2" />
+                                        </TextBlock.Effect>
+                                    </TextBlock>
+                                    <TextBlock Text="{Binding Author}" Foreground="DeepSkyBlue" FontSize="12" Margin="8" VerticalAlignment="Bottom">
+                                        <TextBlock.Effect>
+                                            <DropShadowEffect BlurRadius="8" ShadowDepth="0" Direction="0" Color="Black" Opacity="200" />
+                                        </TextBlock.Effect>
+                                    </TextBlock>
+                                </Grid>
                             </Button>
                         </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
-                
-                <DataGridTextColumn Width="*" Header="Filename" Binding="{Binding Filename}"/>
-                
-                <DataGridTextColumn Width="*" Header="Author" Binding="{Binding Author}"/>
-                
-                <DataGridTextColumn Width="*" Header="Source" Binding="{Binding Source}"/>
-                
-                <DataGridTemplateColumn Width="2*" Header="Tags">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <TextBlock Text="{Binding Tags}" TextWrapping="Wrap"></TextBlock>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
-                
-                <DataGridTextColumn Width="60" Header="Score" Binding="{Binding Score}"/>
-                
-                <DataGridTemplateColumn Width="50">
-                    
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <Button Name="Download_Btn" Click="Download_Btn_Click" ToolTip="Download file">
-                                <iconPacks:PackIconMaterial Kind="Download" />
-                            </Button>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
+                    </ItemsControl.ItemTemplate>
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <UniformGrid Columns="5"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                </ItemsControl>
+            </ScrollViewer>
+        </Grid>
 
-                    <DataGridTemplateColumn.Header>
-                        <Button Name="ClearFetched_Btn"
-                                Click="ClearFetched_Btn_Click"
-                                Style="{DynamicResource SquareButtonStyle}" BorderBrush="{x:Null}"
-                                Width="50" Height="23"
-                                Margin="-10,-4"
-                                ToolTip="Clean all fetched files" Padding="0">
-                            <iconPacks:PackIconMaterial Kind="Broom" />
-                        </Button>
-                    </DataGridTemplateColumn.Header>
-                    
-                </DataGridTemplateColumn>
-                
-            </DataGrid.Columns>
-        </DataGrid>
+        <GridSplitter Grid.Row="2" 
+                      Height="5" 
+                      HorizontalAlignment="Stretch"
+                      Margin="30,2"
+                      Cursor="SizeNS"></GridSplitter>
 
-        <TextBox Name="DownloadLog" IsReadOnly="True" Grid.Row="2" FontFamily="Consolas" FontSize="14"/>
-        <TextBox Name="testBox" Grid.Row="3" FontFamily="Consolas" FontSize="10"></TextBox>
-        
+        <TextBox Name="DownloadLog" IsReadOnly="True" Grid.Row="3" FontFamily="Consolas" FontSize="14"/>
+        <TextBox Name="testBox" Grid.Row="4" FontFamily="Consolas" FontSize="10"></TextBox>
+
     </Grid>
 </controls:MetroWindow>
 

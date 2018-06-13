@@ -22,6 +22,9 @@ namespace DerpiViewer
         // Initialize list of files downloaded this session
         public ObservableCollection<FileDisplay> FilesCollection { get; } = new ObservableCollection<FileDisplay>();
 
+        // Initialize list of current image's tags
+        public ObservableCollection<string> TagsCollection { get; } = new ObservableCollection<string>();
+
         // Currently displayed file
         public FileDisplay CurrentFile;
         public int CurrentFileId;
@@ -29,12 +32,15 @@ namespace DerpiViewer
         // Settings
         private readonly Settings _settings = Settings.Default;
 
+        // Has query been changed
+        private bool _wasQueryChanged = false;
+
         public MainWindow()
         {
             InitializeComponent();
             DataContext = this;
 
-            FileGrid.ItemsSource = FilesCollection;
+            //FileGrid.ItemsSource = FilesCollection;
 
             // Get app accent and theme from settings and set it
             ThemeManager.ChangeAppStyle(Application.Current,
@@ -174,6 +180,13 @@ namespace DerpiViewer
         // Fetch
         private void FetchBtn_Click(object sender, RoutedEventArgs e)
         {
+            // Empty collection if query was changed
+            if (_wasQueryChanged)
+            {
+                FilesCollection.Clear();
+                _wasQueryChanged = false;
+            }
+
             if (!string.IsNullOrEmpty(DlQueryBox.Text))
             {
                 //Prepare rating query
@@ -242,7 +255,7 @@ namespace DerpiViewer
                     foreach (var search in derpi.Search)
                     {
                         // Check if artist is given
-                        string[] tags = search.Tags.Split(',');
+                        string[] tags = search.Tags.Split(',').Select(sValue => sValue.Trim()).ToArray();
                         var artists = tags.Where(it => it.StartsWith("artist:"))
                             .Select(it => it.Replace("artist:", null));
 
@@ -250,28 +263,17 @@ namespace DerpiViewer
                         string artist = artists.Aggregate("", (current, v) => current + (v.ToString() + ","));
                         artist = artist.TrimEnd(',');
 
-                        // Prepare file name
-                        var sb = new System.Text.StringBuilder();
-
-                        sb.Append(search.Id)
-                            .Append("_")
-                            .Append(Path.GetFileNameWithoutExtension(search.FileName))
-                            .Append("_by_")
-                            .Append(artist != "" ? artist : "no-author")
-                            .Append(".")
-                            .Append(search.OriginalFormat);
-
-                        string filename = sb.ToString();
-
                         // Add to list of downloaded files
                         FilesCollection.Add(new FileDisplay(search.FileName,
+                            search.MimeType,
                             search.SourceUrl,
                             artist,
                             search.Tags,
                             search.Description,
                             (int) search.Faves,
                             "https:" + search.Representations.Thumb,
-                            "https:" + search.Image));
+                            "https:" + search.Image,
+                            search.Id));
 
                         // Log the file
                         DownloadLog.Text += search.Image + Environment.NewLine;
@@ -354,12 +356,13 @@ namespace DerpiViewer
         private void DlQueryBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             DlPage.Value = 1;
+            _wasQueryChanged = true;
         }
 
         // Handle download button clicked
         private void Download_Btn_Click(object sender, RoutedEventArgs e)
         {
-            FileDisplay fd = ((FrameworkElement)sender).DataContext as FileDisplay;
+            FileDisplay fd = CurrentFile;
 
             // Download
             using (WebClient client = new WebClient())
@@ -409,8 +412,12 @@ namespace DerpiViewer
             CurrentFile = fd;
             CurrentFileId = FilesCollection.IndexOf(fd);
 
-            if (fd != null) BrowserWindow.Address = fd.File;
+            //Set infogrid
+            SetImage(fd);
+
             CloseImageView.Visibility = Visibility.Visible;
+            ToggleInfogridBtn.Visibility = Visibility.Visible;
+
             Display_Flyout.IsOpen = true;
         }
 
@@ -418,6 +425,8 @@ namespace DerpiViewer
         private void CloseImageView_Click(object sender, RoutedEventArgs e)
         {
             Display_Flyout.IsOpen = false;
+
+            ToggleInfogridBtn.Visibility = Visibility.Collapsed;
             CloseImageView.Visibility = Visibility.Collapsed;
         }
 
@@ -431,16 +440,23 @@ namespace DerpiViewer
                     case Key.A:
                         BrowserWindow.Address = FilesCollection[(CurrentFileId - 1).Clamp(0, FilesCollection.Count - 1)].File;
                         CurrentFileId = (CurrentFileId - 1).Clamp(0, FilesCollection.Count - 1);
+
+                        CurrentFile = FilesCollection[CurrentFileId];
+
+                        SetImage(CurrentFile);
                         break;
 
                     case Key.D:
                         BrowserWindow.Address = FilesCollection[(CurrentFileId + 1).Clamp(0, FilesCollection.Count - 1)].File;
                         CurrentFileId = (CurrentFileId + 1).Clamp(0, FilesCollection.Count - 1);
 
+                        CurrentFile = FilesCollection[CurrentFileId];
+
                         // If nearing the end, fetch more
                         if (CurrentFileId == FilesCollection.Count - 3)
                             FetchBtn_Click(sender, new RoutedEventArgs());
 
+                        SetImage(CurrentFile);
                         break;
 
                     case Key.W:
@@ -450,11 +466,67 @@ namespace DerpiViewer
                         }
                         break;
 
+                    case Key.E:
+                        InfoGrid.Visibility = InfoGrid.Visibility == Visibility.Collapsed ? Visibility.Visible : Visibility.Collapsed;
+                        break;
+
                     case Key.Escape:
                         CloseImageView_Click(sender, new RoutedEventArgs());
                         break;
                 }
             }
+        }
+
+        // Handle clicking on tags
+        private void TagClick(object sender, MouseButtonEventArgs e)
+        {
+            var item = (sender as ListView)?.SelectedItem;
+            if (item != null)
+            {
+                DlQueryBox.Text += ", " + item;
+                _wasQueryChanged = true;
+            }
+        }
+
+        // Handle infogrid hover
+
+        private void ToggleInfogrid_Click(object sender, RoutedEventArgs e)
+        {
+            InfoGrid.Visibility = InfoGrid.Visibility == Visibility.Collapsed ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        // Set Infogrid
+        private void SetImage(FileDisplay fd)
+        {
+            //tags
+            TagsCollection.Clear();
+            if (fd != null)
+            {
+                foreach (string s in fd.Tags)
+                    TagsCollection.Add(s);
+
+                BrowserWindow.Address = fd.File;
+            }
+            else
+            {
+                throw new NullReferenceException("File was null!");
+            }
+
+            //artist
+            Info_Artist.Text = fd.Author;
+            Info_Description.Text = fd.Description;
+        }
+
+        // Open image in browser
+        private void OpenInBrowserBtn_Click(object sender, RoutedEventArgs e)
+        {
+            System.Diagnostics.Process.Start(CurrentFile.Link);
+        }
+
+        // Copy URL to clipboard
+        private void CopyUrlBtn_Click(object sender, RoutedEventArgs e)
+        {
+            Clipboard.SetText(CurrentFile.File);
         }
     }
 }
