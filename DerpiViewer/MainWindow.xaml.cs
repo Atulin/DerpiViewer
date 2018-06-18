@@ -10,6 +10,7 @@ using MahApps.Metro.Controls;
 using System.IO;
 using Microsoft.WindowsAPICodePack.Dialogs;
 using System.Collections.ObjectModel;
+using System.Windows.Data;
 using DerpiViewer.Properties;
 
 namespace DerpiViewer
@@ -25,6 +26,9 @@ namespace DerpiViewer
         // Initialize list of current image's tags
         public ObservableCollection<string> TagsCollection { get; } = new ObservableCollection<string>();
 
+        // Initialize list of saved queries
+        public ObservableCollection<Query> QueriesCollection { get; set; } = new ObservableCollection<Query>(Query.GetAll());
+
         // Currently displayed file
         public FileDisplay CurrentFile;
         public int CurrentFileId;
@@ -35,12 +39,13 @@ namespace DerpiViewer
         // Has query been changed
         private bool _wasQueryChanged = false;
 
+        // Store the current query
+        private string _query;
+
         public MainWindow()
         {
             InitializeComponent();
             DataContext = this;
-
-            //FileGrid.ItemsSource = FilesCollection;
 
             // Get app accent and theme from settings and set it
             ThemeManager.ChangeAppStyle(Application.Current,
@@ -237,6 +242,9 @@ namespace DerpiViewer
                 query += score;
                 query += "&page=" + DlPage.Value;
                 query += "&key=" + _settings.Token;
+
+                // Expose the query
+                _query = query;
 
                 // Prepare json
                 string json = JsonGetter.GetJson(query);
@@ -527,6 +535,39 @@ namespace DerpiViewer
         private void CopyUrlBtn_Click(object sender, RoutedEventArgs e)
         {
             Clipboard.SetText(CurrentFile.File);
+        }
+
+        // Toggle query saving window
+        private void SaveBtn_Click(object sender, RoutedEventArgs e)
+        {
+            SaveWindow.IsOpen = !SaveWindow.IsOpen;
+        }
+
+        // Handle query saving
+        private void SaveQueryBtn_Click(object sender, RoutedEventArgs e)
+        {
+            Query query = QueriesCollection.FirstOrDefault(i => i.Name == QueryNameTextbox.Text);
+
+            if (query == null)
+            {
+                Query q = new Query(QueryNameTextbox.Text, DlQueryBox.Text, _query);
+                QueriesCollection.Add(q);
+                q.Save();
+            }
+            else
+            {
+                testBox.Text = "There already is a query with this name";
+            }
+        }
+
+        // Load the query
+        private void QueryClick(object sender, MouseButtonEventArgs e)
+        {
+            var item = (sender as ListView)?.SelectedItem;
+            if (item != null)
+            {
+                Title += ", " + item;
+            }
         }
     }
 }

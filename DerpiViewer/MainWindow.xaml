@@ -5,7 +5,8 @@
                       xmlns:controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
                       xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
                       xmlns:cefSharp="clr-namespace:CefSharp.Wpf;assembly=CefSharp.Wpf"
-                                            
+                      xmlns:simpleChildWindow="clr-namespace:MahApps.Metro.SimpleChildWindow;assembly=MahApps.Metro.SimpleChildWindow"
+
                       Title="DerpiViewer"
                                             
                       SaveWindowPosition="True"
@@ -312,36 +313,46 @@
         <Grid Grid.Row="0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="1.2*"/>
-                <ColumnDefinition/>
+                <ColumnDefinition Width="50"/>
+                <ColumnDefinition Width="2*"/>
                 <ColumnDefinition Width="100"/>
                 <ColumnDefinition Width="50"/>
                 <ColumnDefinition Width="50"/>
                 <ColumnDefinition Width="50"/>
-                <ColumnDefinition Width="20"/>
+                <ColumnDefinition Width="0.1*"/>
                 <ColumnDefinition Width="50"/>
                 <ColumnDefinition Width="50"/>
-                <ColumnDefinition/>
             </Grid.ColumnDefinitions>
 
+            <Button Name="SaveBtn" 
+                    Click="SaveBtn_Click" 
+                    Style="{DynamicResource SquareButtonStyle}"
+                    BorderThickness="1"
+                    Grid.Column="1"
+                    ToolTip="Save current search"
+                    IsDefault="True">
+                <iconPacks:PackIconMaterial Kind="ContentSave" />
+            </Button>
+
             <TextBox Name="DlQueryBox" 
-                     Grid.Column="1"
+                     Grid.Column="2"
                      TextChanged="DlQueryBox_TextChanged"
                      controls:TextBoxHelper.ClearTextButton="True"
                      controls:TextBoxHelper.Watermark="Search query"></TextBox>
 
             <controls:NumericUpDown Name="DlPage"
                                     Value="1"
-                                    HasDecimals="False"
+                                    NumericInputMode="Numbers"
                                     Minimum="1"
                                     InterceptArrowKeys="True"
                                     InterceptManualEnter="True"
-                                    Grid.Column="2"></controls:NumericUpDown>
+                                    Grid.Column="3"></controls:NumericUpDown>
 
             <Button Name="FetchBtn" 
                     Click="FetchBtn_Click" 
                     Style="{DynamicResource SquareButtonStyle}"
                     BorderThickness="1"
-                    Grid.Column="3"
+                    Grid.Column="4"
                     ToolTip="Search"
                     IsDefault="True">
                 <iconPacks:PackIconMaterial Kind="Magnify" />
@@ -351,7 +362,7 @@
                     Click="AdvancedSearchBtn_Click" 
                     Style="{DynamicResource SquareButtonStyle}"
                     BorderThickness="1"
-                    Grid.Column="4"
+                    Grid.Column="5"
                     ToolTip="Advanced search">
                 <iconPacks:PackIconMaterial Kind="Filter" />
             </Button>
@@ -360,17 +371,16 @@
                     Click="ClearFetched_Btn_Click"
                     Style="{DynamicResource SquareButtonStyle}"
                     BorderThickness="1"
-                    Grid.Column="5"
+                    Grid.Column="6"
                     ToolTip="Clean all fetched files">
                 <iconPacks:PackIconMaterial Kind="Broom" />
             </Button>
-
 
             <Button Name="OpenFolderBtn"
                     Click="OpenFolderBtn_Click"
                     Style="{DynamicResource SquareButtonStyle}"
                     BorderThickness="1"
-                    Grid.Column="7"
+                    Grid.Column="8"
                     ToolTip="Open download folder">
                 <iconPacks:PackIconMaterial Kind="FolderOpen" />
             </Button>
@@ -379,8 +389,8 @@
                     Click="DowloadAllBtn_Click"
                     Style="{DynamicResource SquareButtonStyle}"
                     BorderThickness="1"
-                    Grid.Column="8"
-                    ToolTip="Download all">
+                    Grid.Column="9"
+                    ToolTip="Download all currently fetched images">
                 <iconPacks:PackIconMaterial Kind="Download" />
             </Button>
         </Grid>
@@ -436,6 +446,52 @@
 
         <TextBox Name="DownloadLog" IsReadOnly="True" Grid.Row="3" FontFamily="Consolas" FontSize="14"/>
         <TextBox Name="testBox" Grid.Row="4" FontFamily="Consolas" FontSize="10"></TextBox>
+
+        <simpleChildWindow:ChildWindow Name="SaveWindow"
+                                       Title="Save search"
+                                       IsModal="True"
+                                       CloseByEscape="True"
+                                       ShowCloseButton="True"
+                                       Grid.RowSpan="20">
+            <simpleChildWindow:ChildWindow.OverlayBrush>
+                <SolidColorBrush Opacity="0.8" Color="{DynamicResource FlyoutColor}" />
+            </simpleChildWindow:ChildWindow.OverlayBrush>
+
+            <Grid Width="300px" Height="600px">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition Width="32"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="32"/>
+                    <RowDefinition/>
+                </Grid.RowDefinitions>
+                
+                <TextBox Name="QueryNameTextbox"></TextBox>
+                <Button Name="SaveQueryBtn" 
+                        Click="SaveQueryBtn_Click" 
+                        Style="{DynamicResource SquareButtonStyle}"
+                        BorderThickness="1"
+                        Grid.Column="1"
+                        ToolTip="Save current search"
+                        IsDefault="True">
+                    <iconPacks:PackIconMaterial Kind="ContentSave" />
+                </Button>
+
+                <ListView Name="QueriesList"
+                          ItemsSource="{Binding QueriesCollection}"
+                          PreviewMouseLeftButtonUp="QueryClick"
+                          Grid.Row="1" Grid.ColumnSpan="2">
+                    <ListView.ItemTemplate>
+                        <DataTemplate>
+                            <WrapPanel>
+                                <TextBlock Text="{Binding Name}" FontWeight="Bold" ToolTip="{Binding Tags}"/>
+                            </WrapPanel>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+            </Grid>
+        </simpleChildWindow:ChildWindow>
 
     </Grid>
 </controls:MetroWindow>
