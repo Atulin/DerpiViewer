@@ -42,6 +42,9 @@ namespace DerpiViewer
         // Store the current query
         private string _query;
 
+        // Store bookmark name border brush
+        private new System.Windows.Media.Brush BorderBrush;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -91,6 +94,9 @@ namespace DerpiViewer
             Safe_Switch.IsChecked = _settings.Safe;
             Questionable_Switch.IsChecked = _settings.Questionable;
             Explicit_Switch.IsChecked = _settings.Explicit;
+
+            // Set border brush
+            BorderBrush = QueryNameTextbox.BorderBrush;
         }
 
         // Handle main menu open/close
@@ -192,112 +198,15 @@ namespace DerpiViewer
                 _wasQueryChanged = false;
             }
 
-            if (!string.IsNullOrEmpty(DlQueryBox.Text))
+            string query = BuildQuery();
+
+            if (query != "")
             {
-                //Prepare rating query
-                string rating = "";
-
-                if (Safe_Switch.IsChecked != null && (bool)Safe_Switch.IsChecked)
-                    rating += "safe ";
-                if (Questionable_Switch.IsChecked != null && (bool)Questionable_Switch.IsChecked)
-                    rating += "questionable ";
-                if (Explicit_Switch.IsChecked != null && (bool)Explicit_Switch.IsChecked)
-                    rating += "explicit ";
-                rating = rating.TrimEnd(' ').Replace(" ", "+OR+");
-
-                if (rating != "")
-                    rating = "%2C+(" + rating + ")";
-
-                //Prepare score query
-                string score = "";
-
-                if (MinimumScore_Numeric.Value != null && MaxiumumScore_Numeric.Value != null)
-                {
-                    score += "(score.gte:" + MinimumScore_Numeric.Value;
-                    score += " AND ";
-                    score += "score.lte:" + MaxiumumScore_Numeric.Value;
-                    score += ")";
-                }
-                else
-                {
-                    if (MinimumScore_Numeric.Value != null)
-                        score += "score.gte:" + MinimumScore_Numeric.Value;
-                    if (MaxiumumScore_Numeric.Value != null)
-                        score += "score.lte:" + MaxiumumScore_Numeric.Value;
-                }
-
-                if (score != "")
-                    score = "%2C+" + score;
-
-
-                // Prepare API query
-                string query = "";
-                query += "https://derpibooru.org/search.json?q=";
-                query += DlQueryBox.Text
-                        .TrimEnd(',')
-                        .TrimEnd(' ')
-                        .Replace(" ", "+")
-                        .Replace(",", "%2C"); // clean up query
-                query += rating;
-                query += score;
-                query += "&page=" + DlPage.Value;
-                query += "&key=" + _settings.Token;
-
-                // Expose the query
                 _query = query;
 
-                // Prepare json
-                string json = JsonGetter.GetJson(query);
-
-                Derpi derpi = Derpi.FromJson(json);
-
-                testBox.Text = query + " at " + _settings.DownloadLocation; 
-
-                // Go through images in the search
-                if (derpi == null)
-                {
-                    testBox.Text = "No results for: " + query;
-                }
-                else
-                {
-                    foreach (var search in derpi.Search)
-                    {
-                        // Check if artist is given
-                        string[] tags = search.Tags.Split(',').Select(sValue => sValue.Trim()).ToArray();
-                        var artists = tags.Where(it => it.StartsWith("artist:"))
-                            .Select(it => it.Replace("artist:", null));
-
-                        // Format artists
-                        string artist = artists.Aggregate("", (current, v) => current + (v.ToString() + ","));
-                        artist = artist.TrimEnd(',');
-
-                        // Add to list of downloaded files
-                        FilesCollection.Add(new FileDisplay(search.FileName,
-                            search.MimeType,
-                            search.SourceUrl,
-                            artist,
-                            search.Tags,
-                            search.Description,
-                            (int) search.Faves,
-                            "https:" + search.Representations.Thumb,
-                            "https:" + search.Image,
-                            search.Id));
-
-                        // Log the file
-                        DownloadLog.Text += search.Image + Environment.NewLine;
-
-                    }
-
-                    // Up page number
-                    DlPage.Value = DlPage.Value + 1;
-                }
-
+                // Populate grid
+                PopulateGrid(_query);
             }
-            else
-            {
-                testBox.Text = "query cannot be empty";
-            }
-
         }
 
         // Handle cleaning fetched files
@@ -540,22 +449,42 @@ namespace DerpiViewer
         // Toggle query saving window
         private void SaveBtn_Click(object sender, RoutedEventArgs e)
         {
+            if (SaveWindow.Visibility != Visibility.Visible)
+                SaveWindow.Visibility = Visibility.Visible;
+
             SaveWindow.IsOpen = !SaveWindow.IsOpen;
         }
 
         // Handle query saving
         private void SaveQueryBtn_Click(object sender, RoutedEventArgs e)
         {
-            Query query = QueriesCollection.FirstOrDefault(i => i.Name == QueryNameTextbox.Text);
+            Query queryToSave = QueriesCollection.FirstOrDefault(i => i.Name == QueryNameTextbox.Text);
 
-            if (query == null)
+            if (queryToSave == null)
             {
-                Query q = new Query(QueryNameTextbox.Text, DlQueryBox.Text, _query);
-                QueriesCollection.Add(q);
-                q.Save();
+                QueryNameTextbox.BorderBrush = BorderBrush;
+
+                Query q = new Query()
+                {
+                    Name = QueryNameTextbox.Text,
+                    Tags = DlQueryBox.Text,
+                    QueryStr = BuildQuery(),
+                    MinScore = (MinimumScore_Numeric.Value != null) ? (int)MinimumScore_Numeric.Value : 0,
+                    MaxScore = (MaximumScore_Numeric.Value != null) ? (int)MaximumScore_Numeric.Value : 0,
+                    Ratings = new[]
+                    {
+                        Safe_Switch.IsChecked != null && (bool)Safe_Switch.IsChecked,
+                        Questionable_Switch.IsChecked != null && (bool)Questionable_Switch.IsChecked,
+                        Explicit_Switch.IsChecked != null && (bool)Explicit_Switch.IsChecked
+                    }
+
+                };
+                QueriesCollection.Insert(0, q);
+                q.SaveQuery();
             }
             else
             {
+                QueryNameTextbox.BorderBrush = System.Windows.Media.Brushes.Red;
                 testBox.Text = "There already is a query with this name";
             }
         }
@@ -566,8 +495,168 @@ namespace DerpiViewer
             var item = (sender as ListView)?.SelectedItem;
             if (item != null)
             {
-                Title += ", " + item;
+                Query q = (Query) item;
+
+                // Expose the query
+                _query = q.QueryStr;
+            
+                // Substitute tags
+                DlQueryBox.Text = q.Tags;
+                // Set scores
+                MinimumScore_Numeric.Value = q.MinScore;
+                MaximumScore_Numeric.Value = q.MaxScore;
+                // Set ratings
+                Safe_Switch.IsChecked = q.Ratings[0];
+                Questionable_Switch.IsChecked = q.Ratings[1];
+                Explicit_Switch.IsChecked = q.Ratings[2];
+
+                // Clear grid
+                if (FilesCollection.Any())
+                {
+                    FilesCollection.Clear();
+                    DlPage.Value = 1;;
+                }
+
+                // Populate grid
+                PopulateGrid(_query);
             }
         }
+
+        // Delete query
+        private void DeleteQueryBtn_Click(object sender, RoutedEventArgs e)
+        {
+            Query queryToDelete = QueriesCollection.FirstOrDefault(i => i.Name == (string)(sender as Button)?.Tag);
+
+            if (queryToDelete != null)
+            {
+                QueriesCollection.Remove(queryToDelete);
+                queryToDelete.DeleteQuery();
+            }
+        }
+
+        ///
+        ///
+        ///
+        ///
+        ///
+
+        // Method used to build a query
+        public string BuildQuery()
+        {
+            string query = "";
+
+            if (!string.IsNullOrEmpty(DlQueryBox.Text))
+            {
+                //Prepare rating query
+                string rating = "";
+
+                if (Safe_Switch.IsChecked != null && (bool)Safe_Switch.IsChecked)
+                    rating += "safe ";
+                if (Questionable_Switch.IsChecked != null && (bool)Questionable_Switch.IsChecked)
+                    rating += "questionable ";
+                if (Explicit_Switch.IsChecked != null && (bool)Explicit_Switch.IsChecked)
+                    rating += "explicit ";
+                rating = rating.TrimEnd(' ').Replace(" ", "+OR+");
+
+                if (rating != "")
+                    rating = "%2C+(" + rating + ")";
+
+                //Prepare score query
+                string score = "";
+
+                if (MinimumScore_Numeric.Value != null && MaximumScore_Numeric.Value != null)
+                {
+                    score += "(score.gte:" + MinimumScore_Numeric.Value;
+                    score += " AND ";
+                    score += "score.lte:" + MaximumScore_Numeric.Value;
+                    score += ")";
+                }
+                else
+                {
+                    if (MinimumScore_Numeric.Value != null)
+                        score += "score.gte:" + MinimumScore_Numeric.Value;
+                    if (MaximumScore_Numeric.Value != null)
+                        score += "score.lte:" + MaximumScore_Numeric.Value;
+                }
+
+                if (score != "")
+                    score = "%2C+" + score;
+
+
+                // Prepare API query
+                query += "https://derpibooru.org/search.json?q=";
+                query += DlQueryBox.Text
+                        .TrimEnd(',')
+                        .TrimEnd(' ')
+                        .Replace(" ", "+")
+                        .Replace(",", "%2C"); // clean up query
+                query += rating;
+                query += score;
+                query += "&page=" + DlPage.Value;
+                query += "&key=" + _settings.Token;
+            }
+            else
+            {
+                testBox.Text = "query cannot be empty";
+            }
+
+            // Return
+            return query;
+        }
+
+
+        // Method used to populate the grid
+        public void PopulateGrid(string query)
+        {
+            // Prepare json
+            string json = JsonGetter.GetJson(query);
+
+            Derpi derpi = Derpi.FromJson(json);
+
+            testBox.Text = query + " at " + _settings.DownloadLocation;
+
+            // Go through images in the search
+            if (derpi == null)
+            {
+                testBox.Text = "No results for: " + query;
+            }
+            else
+            {
+                foreach (var search in derpi.Search)
+                {
+                    // Check if artist is given
+                    string[] tags = search.Tags.Split(',').Select(sValue => sValue.Trim()).ToArray();
+                    var artists = tags.Where(it => it.StartsWith("artist:"))
+                        .Select(it => it.Replace("artist:", null));
+
+                    // Format artists
+                    string artist = artists.Aggregate("", (current, v) => current + (v.ToString() + ","));
+                    artist = artist.TrimEnd(',');
+
+                    // Add to list of downloaded files
+                    FilesCollection.Add(new FileDisplay(search.FileName,
+                        search.MimeType,
+                        search.SourceUrl,
+                        artist,
+                        search.Tags,
+                        search.Description,
+                        (int)search.Faves,
+                        "https:" + search.Representations.Thumb,
+                        "https:" + search.Image,
+                        search.Id));
+
+                    // Log the file
+                    DownloadLog.Text += search.Image + Environment.NewLine;
+
+                }
+
+                // Up page number
+                DlPage.Value = DlPage.Value + 1;
+
+            }
+        }
+
+
+
     }
 }
