@@ -47,6 +47,10 @@ namespace DerpiViewer
 
         public MainWindow()
         {
+            // Create Json file to store bookmarks
+            if (!File.Exists("bookmarks.json"))
+                File.Create("bookmarks.json");
+
             InitializeComponent();
             DataContext = this;
 

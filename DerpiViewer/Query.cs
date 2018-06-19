@@ -12,7 +12,7 @@ namespace DerpiViewer
 {
     public class Query
     {
-        private const string Path = "queries.sav";
+        private const string Path = "bookmarks.json";
 
         public string Name { get; set; }
         public string Tags { get; set; }
