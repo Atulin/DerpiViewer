@@ -19,7 +19,9 @@
                       EnableDWMDropShadow="False"
                       
                       Height="720" Width="1280"
-                      MinHeight="380" MinWidth="640">
+                      MinHeight="380" MinWidth="640"
+                      
+                      Window.StateChanged="MainWindow_OnStateChanged">
 
     <Window.Resources>
         <ResourceDictionary>
@@ -61,6 +63,9 @@
         <controls:WindowCommands>
             <Button Name="ToggleInfogridBtn" Click="ToggleInfogrid_Click"  ToolTip="Show image info" Visibility="Collapsed">
                 <iconPacks:PackIconMaterial Kind="InformationOutline" />
+            </Button>
+            <Button Name="ToggleFullscreen" Click="ToggleFullscreen_Click" ToolTip="Toggle fullscreen">
+                <iconPacks:PackIconMaterial Name="FullscreenIcon" Kind="Fullscreen" />
             </Button>
         </controls:WindowCommands>
     </controls:MetroWindow.RightWindowCommands>

@@ -51,6 +51,9 @@ namespace DerpiViewer
 
         public MainWindow()
         {
+            // Set window state
+            WindowState = _settings.WindowState;
+
             // Create Json file to store bookmarks
             if (!File.Exists("bookmarks.json"))
                 File.Create("bookmarks.json");
@@ -549,6 +552,32 @@ namespace DerpiViewer
             }
         }
 
+        // Fullscreen
+        private bool _isFullscreen;
+        private bool _isCustomFullscreen;
+        private void ToggleFullscreen_Click(object sender, RoutedEventArgs e)
+        {
+            _isCustomFullscreen = true;
+
+            WindowState = _isFullscreen ? _settings.WindowState : WindowState.Maximized;
+            ResizeMode = _isFullscreen ? ResizeMode.CanResize : ResizeMode.NoResize;
+
+            _isFullscreen = !_isFullscreen;
+            IgnoreTaskbarOnMaximize = _isFullscreen;
+
+            _isCustomFullscreen = false;
+        }
+
+        // Handle window state changed
+        private void MainWindow_OnStateChanged(object sender, EventArgs e)
+        {
+            if (!_isCustomFullscreen)
+            {
+                _settings.WindowState = WindowState;
+                _settings.Save();
+            }
+        }
+
         ///
         ///
         ///
@@ -608,7 +637,9 @@ namespace DerpiViewer
                 query += rating;
                 query += score;
                 query += "&page=" + DlPage.Value;
-                query += "&key=" + _settings.Token;
+
+                if (!string.IsNullOrEmpty(_settings.Token))
+                    query += "&key=" + _settings.Token;
             }
             else
             {
@@ -674,8 +705,5 @@ namespace DerpiViewer
 
             }
         }
-
-
-
     }
 }
