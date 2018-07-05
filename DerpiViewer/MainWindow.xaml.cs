@@ -29,6 +29,10 @@ namespace DerpiViewer
         // Initialize list of saved queries
         public ObservableCollection<Query> QueriesCollection { get; set; } = new ObservableCollection<Query>(Query.GetAll());
 
+        // Store loaded files count and current file number
+        public int TotalFiles = 0;
+        public int CurrentFileNumber { get; set; } = 1;
+
         // Currently displayed file
         public FileDisplay CurrentFile;
         public int CurrentFileId;
@@ -332,12 +336,14 @@ namespace DerpiViewer
 
             CurrentFile = fd;
             CurrentFileId = FilesCollection.IndexOf(fd);
+            FileIndexTxt.Text = CurrentFileId + 1 + "/" + TotalFiles;
 
             //Set infogrid
             SetImage(fd);
 
             CloseImageView.Visibility = Visibility.Visible;
             ToggleInfogridBtn.Visibility = Visibility.Visible;
+            FileIndexTxt.Visibility = Visibility.Visible;
 
             Display_Flyout.IsOpen = true;
         }
@@ -349,6 +355,7 @@ namespace DerpiViewer
 
             ToggleInfogridBtn.Visibility = Visibility.Collapsed;
             CloseImageView.Visibility = Visibility.Collapsed;
+            FileIndexTxt.Visibility = Visibility.Collapsed;
         }
 
         // Handle keyboard shortcuts
@@ -363,6 +370,8 @@ namespace DerpiViewer
                         CurrentFileId = (CurrentFileId - 1).Clamp(0, FilesCollection.Count - 1);
 
                         CurrentFile = FilesCollection[CurrentFileId];
+                        
+                        FileIndexTxt.Text = CurrentFileId+1 + "/" + TotalFiles;
 
                         SetImage(CurrentFile);
                         break;
@@ -374,8 +383,10 @@ namespace DerpiViewer
                         CurrentFile = FilesCollection[CurrentFileId];
 
                         // If nearing the end, fetch more
-                        if (CurrentFileId == FilesCollection.Count - 3)
+                        if (CurrentFileId >= FilesCollection.Count - 3)
                             FetchBtn_Click(sender, new RoutedEventArgs());
+                        
+                        FileIndexTxt.Text = CurrentFileId+1 + "/" + TotalFiles;
 
                         SetImage(CurrentFile);
                         break;
@@ -656,6 +667,10 @@ namespace DerpiViewer
 
                 // Up page number
                 DlPage.Value = DlPage.Value + 1;
+
+                // Up the file count
+                TotalFiles = FilesCollection.Count();
+                FileIndexTxt.Text = CurrentFileNumber + "/" + TotalFiles;
 
             }
         }

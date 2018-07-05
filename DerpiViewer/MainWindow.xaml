@@ -48,6 +48,12 @@
             <Button Name="CloseImageView" Click="CloseImageView_Click" Visibility="Collapsed">
                 <iconPacks:PackIconMaterial Kind="ArrowLeft" />
             </Button>
+            <TextBlock Name="FileIndexTxt"
+                       FontFamily="Liberation Sans Narrow" FontSize="16" FontWeight="DemiBold"
+                       VerticalAlignment="Center"
+                       Opacity="0.70"
+                       Margin="5,0"
+                       Visibility="Collapsed"></TextBlock>
         </controls:WindowCommands>
     </controls:MetroWindow.LeftWindowCommands>
     
